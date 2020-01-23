@@ -9,9 +9,20 @@ using System.Net;
 public class NetworkMan : MonoBehaviour
 {
     public UdpClient udp;
+    public GameObject cube;
+    List<GameObject> cubes;
+    Stack<string> newID;
+    Stack<string> dropID;
+    int spawnCounter;
+
     // Start is called before the first frame update
     void Start()
     {
+        spawnCounter = 0;
+        cubes = new List<GameObject>();
+        newID = new Stack<string>();
+        dropID = new Stack<string>();
+
         udp = new UdpClient();
         
         udp.Connect("3.86.206.4", 12345);
@@ -45,6 +56,7 @@ public class NetworkMan : MonoBehaviour
     [Serializable]
     public class Player{
         public string id;
+        [Serializable]
         public struct receivedColor{
             public float R;
             public float G;
@@ -55,7 +67,7 @@ public class NetworkMan : MonoBehaviour
 
     [Serializable]
     public class NewPlayer{
-        
+        public Player[] player;
     }
 
     [Serializable]
@@ -83,15 +95,30 @@ public class NetworkMan : MonoBehaviour
         try{
             switch(latestMessage.cmd){
                 case commands.NEW_CLIENT:
+                    NewPlayer p = JsonUtility.FromJson<NewPlayer>(returnData);
+                    foreach(var it in p.player)
+                    {
+                        newID.Push(it.id);
+                    }
                     break;
                 case commands.UPDATE:
                     lastestGameState = JsonUtility.FromJson<GameState>(returnData);
                     break;
                 case commands.CLIENT_LIST:
-                    UnityEngine.Debug.Log("CLIENT_LIST");
+                    NewPlayer np = JsonUtility.FromJson<NewPlayer>(returnData);
+                    foreach (var it in np.player)
+                    {
+                        newID.Push(it.id);
+                    }
+                    Debug.Log("CLIENT_LIST");
                     break;
                 case commands.DROP:
-                    UnityEngine.Debug.Log("DROP");
+                    NewPlayer dp = JsonUtility.FromJson<NewPlayer>(returnData);
+                    foreach (var it in dp.player)
+                    {
+                        dropID.Push(it.id);
+                    }
+                    Debug.Log("DROP");
                     break;
                 default:
                     Debug.Log("Error");
@@ -106,16 +133,44 @@ public class NetworkMan : MonoBehaviour
         socket.BeginReceive(new AsyncCallback(OnReceived), socket);
     }
 
-    void SpawnPlayers(){
-        
+    void SpawnPlayers(string id){
+        foreach (var it in cubes)
+        {
+            if (it.GetComponent<NetworkID>().id == id)
+                return;
+        }
 
+        GameObject temp = Instantiate(cube, new Vector3(-5 + spawnCounter, 0, 0), cube.transform.rotation);
+        temp.GetComponent<NetworkID>().id = id;
+        cubes.Add(temp);
+        spawnCounter++;
     }
 
     void UpdatePlayers(){
-
+        foreach(var it in cubes)
+        {
+            foreach (var p in lastestGameState.players)
+            {
+                if (it.GetComponent<NetworkID>().id == p.id)
+                {
+                    Color c = new Color(p.color.R, p.color.G, p.color.B);
+                    it.GetComponent<Renderer>().material.SetColor("_Color", c);
+                }
+            }
+        }
     }
 
-    void DestroyPlayers(){
+    void DestroyPlayers(string id){
+        for(int i = 0; i <cubes.Count; i++)
+        {
+            var it = cubes[i];
+            if (it.GetComponent<NetworkID>().id == id)
+            {
+                var temp = it;
+                cubes.Remove(it);
+                Destroy(temp);
+            }
+        }
 
     }
     
@@ -125,8 +180,23 @@ public class NetworkMan : MonoBehaviour
     }
 
     void Update(){
-        SpawnPlayers();
+        if (newID.Count > 0)
+        {
+            for(int i = 0; i < newID.Count; i++)
+            {
+                var it = newID.Pop();
+                SpawnPlayers(it);
+            }
+        }
         UpdatePlayers();
-        DestroyPlayers();
+
+        if (dropID.Count > 0)
+        {
+            for (int i = 0; i < dropID.Count; i++)
+            {
+                var it = dropID.Pop();
+                DestroyPlayers(it);
+            }
+        }
     }
 }
