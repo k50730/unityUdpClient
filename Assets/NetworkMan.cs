@@ -14,7 +14,7 @@ public class NetworkMan : MonoBehaviour
     {
         udp = new UdpClient();
         
-        udp.Connect("PUT_IP_ADDRESS_HERE",12345);
+        udp.Connect("3.86.206.4", 12345);
 
         Byte[] sendBytes = Encoding.ASCII.GetBytes("connect");
       
@@ -32,7 +32,9 @@ public class NetworkMan : MonoBehaviour
 
     public enum commands{
         NEW_CLIENT,
-        UPDATE
+        UPDATE,
+        CLIENT_LIST,
+        DROP
     };
     
     [Serializable]
@@ -85,6 +87,12 @@ public class NetworkMan : MonoBehaviour
                 case commands.UPDATE:
                     lastestGameState = JsonUtility.FromJson<GameState>(returnData);
                     break;
+                case commands.CLIENT_LIST:
+                    UnityEngine.Debug.Log("CLIENT_LIST");
+                    break;
+                case commands.DROP:
+                    UnityEngine.Debug.Log("DROP");
+                    break;
                 default:
                     Debug.Log("Error");
                     break;
@@ -99,6 +107,7 @@ public class NetworkMan : MonoBehaviour
     }
 
     void SpawnPlayers(){
+        
 
     }
 
