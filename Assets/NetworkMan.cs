@@ -40,7 +40,7 @@ public class NetworkMan : MonoBehaviour
         udp.Dispose();
     }
 
-
+  
     public enum commands{
         NEW_CLIENT,
         UPDATE,
@@ -62,7 +62,9 @@ public class NetworkMan : MonoBehaviour
             public float G;
             public float B;
         }
-        public receivedColor color;        
+        public receivedColor color;
+
+        Vector3 position;
     }
 
     [Serializable]
@@ -141,7 +143,7 @@ public class NetworkMan : MonoBehaviour
         }
 
         GameObject temp = Instantiate(cube, new Vector3(-5 + spawnCounter, 0, 0), cube.transform.rotation);
-        temp.GetComponent<NetworkID>().id = id;
+        temp.GetComponent<NetworkID>().id = id; // this is this player's id
         cubes.Add(temp);
         spawnCounter++;
     }
@@ -153,6 +155,9 @@ public class NetworkMan : MonoBehaviour
             {
                 if (it.GetComponent<NetworkID>().id == p.id)
                 {
+                    // change it to position & rotation
+
+
                     Color c = new Color(p.color.R, p.color.G, p.color.B);
                     it.GetComponent<Renderer>().material.SetColor("_Color", c);
                 }
@@ -172,6 +177,26 @@ public class NetworkMan : MonoBehaviour
             }
         }
 
+    }
+
+    void playerMovement()
+    {
+        if(Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            
+        }
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+
+        }
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+
+        }
+        if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+
+        }
     }
     
     void HeartBeat(){
