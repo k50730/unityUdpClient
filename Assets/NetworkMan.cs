@@ -14,6 +14,7 @@ public class NetworkMan : MonoBehaviour
     Stack<string> newID;
     Stack<string> dropID;
     int spawnCounter;
+    string ownedID;
 
     // Start is called before the first frame update
     void Start()
@@ -33,7 +34,9 @@ public class NetworkMan : MonoBehaviour
 
         udp.BeginReceive(new AsyncCallback(OnReceived), udp);
 
-        InvokeRepeating("HeartBeat", 1, 1);
+        InvokeRepeating("HeartBeat", 1, 0.033f);
+        InvokeRepeating("SendPosition", 1, 0.033f);
+
     }
 
     void OnDestroy(){
@@ -45,7 +48,8 @@ public class NetworkMan : MonoBehaviour
         NEW_CLIENT,
         UPDATE,
         CLIENT_LIST,
-        DROP
+        DROP,
+        OWN_ID
     };
     
     [Serializable]
@@ -64,9 +68,20 @@ public class NetworkMan : MonoBehaviour
         }
         public receivedColor color;
 
-        Vector3 position;
+        public Vector3 playerPos;
+        public Quaternion playerRot;
     }
-
+    [Serializable]
+    class PlayerInfo
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+    }
+    [Serializable]
+    public class OwnID
+    {
+        public Player ownID;
+    }
     [Serializable]
     public class NewPlayer{
         public Player[] player;
@@ -96,6 +111,7 @@ public class NetworkMan : MonoBehaviour
         latestMessage = JsonUtility.FromJson<Message>(returnData);
         try{
             switch(latestMessage.cmd){
+                
                 case commands.NEW_CLIENT:
                     NewPlayer p = JsonUtility.FromJson<NewPlayer>(returnData);
                     foreach(var it in p.player)
@@ -122,6 +138,11 @@ public class NetworkMan : MonoBehaviour
                     }
                     Debug.Log("DROP");
                     break;
+                case commands.OWN_ID:
+                    OwnID oID = JsonUtility.FromJson<OwnID>(returnData);
+                    ownedID = oID.ownID.id;
+                    Debug.Log("OWNID");
+                    break;
                 default:
                     Debug.Log("Error");
                     break;
@@ -144,6 +165,11 @@ public class NetworkMan : MonoBehaviour
 
         GameObject temp = Instantiate(cube, new Vector3(-5 + spawnCounter, 0, 0), cube.transform.rotation);
         temp.GetComponent<NetworkID>().id = id; // this is this player's id
+        if (id == ownedID)
+        {
+            temp.AddComponent<PlayerController>();
+            temp.GetComponent<PlayerController>().netMan = this;
+        }
         cubes.Add(temp);
         spawnCounter++;
     }
@@ -156,7 +182,8 @@ public class NetworkMan : MonoBehaviour
                 if (it.GetComponent<NetworkID>().id == p.id)
                 {
                     // change it to position & rotation
-
+                    //it.transform.position = p.playerPos;
+                    //it.transform.rotation = p.playerRot;
 
                     Color c = new Color(p.color.R, p.color.G, p.color.B);
                     it.GetComponent<Renderer>().material.SetColor("_Color", c);
@@ -166,7 +193,7 @@ public class NetworkMan : MonoBehaviour
     }
 
     void DestroyPlayers(string id){
-        for(int i = 0; i <cubes.Count; i++)
+        for(int i = 0; i < cubes.Count; i++)
         {
             var it = cubes[i];
             if (it.GetComponent<NetworkID>().id == id)
@@ -179,28 +206,20 @@ public class NetworkMan : MonoBehaviour
 
     }
 
-    void playerMovement()
-    {
-        if(Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            
-        }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-
-        }
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-
-        }
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-
-        }
-    }
-    
+  
     void HeartBeat(){
         Byte[] sendBytes = Encoding.ASCII.GetBytes("heartbeat");
+        udp.Send(sendBytes, sendBytes.Length);
+    }
+
+    public void SendPosition(Transform t)
+    {
+        PlayerInfo info = new PlayerInfo();
+        info.position = t.position;
+        info.rotation = t.rotation;
+        string jsonString = JsonUtility.ToJson(info);
+        Debug.Log(jsonString);
+        Byte[] sendBytes = Encoding.ASCII.GetBytes(jsonString);
         udp.Send(sendBytes, sendBytes.Length);
     }
 
