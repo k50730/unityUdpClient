@@ -35,7 +35,7 @@ public class NetworkMan : MonoBehaviour
         udp.BeginReceive(new AsyncCallback(OnReceived), udp);
 
         InvokeRepeating("HeartBeat", 1, 0.033f);
-        InvokeRepeating("SendPosition", 1, 0.033f);
+       // InvokeRepeating("SendPosition", 1, 0.033f);
 
     }
 
@@ -68,14 +68,14 @@ public class NetworkMan : MonoBehaviour
         }
         public receivedColor color;
 
-        public Vector3 playerPos;
-        public Quaternion playerRot;
+        public Vector3 position;
+        public Vector3 rotation;
     }
     [Serializable]
     class PlayerInfo
     {
         public Vector3 position;
-        public Quaternion rotation;
+        public Vector3 rotation;
     }
     [Serializable]
     public class OwnID
@@ -182,11 +182,11 @@ public class NetworkMan : MonoBehaviour
                 if (it.GetComponent<NetworkID>().id == p.id)
                 {
                     // change it to position & rotation
-                    //it.transform.position = p.playerPos;
-                    //it.transform.rotation = p.playerRot;
+                    it.transform.position = p.position;
+                    it.transform.eulerAngles = p.rotation;
 
-                    Color c = new Color(p.color.R, p.color.G, p.color.B);
-                    it.GetComponent<Renderer>().material.SetColor("_Color", c);
+                    //Color c = new Color(p.color.R, p.color.G, p.color.B);
+                    //it.GetComponent<Renderer>().material.SetColor("_Color", c);
                 }
             }
         }
@@ -212,11 +212,11 @@ public class NetworkMan : MonoBehaviour
         udp.Send(sendBytes, sendBytes.Length);
     }
 
-    public void SendPosition(Transform t)
+    public void SendPosition(Vector3 pos, Vector3 rot)
     {
         PlayerInfo info = new PlayerInfo();
-        info.position = t.position;
-        info.rotation = t.rotation;
+        info.position = pos;
+        info.rotation = rot;
         string jsonString = JsonUtility.ToJson(info);
         Debug.Log(jsonString);
         Byte[] sendBytes = Encoding.ASCII.GetBytes(jsonString);

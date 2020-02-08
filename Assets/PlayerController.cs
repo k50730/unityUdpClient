@@ -6,6 +6,10 @@ public class PlayerController : MonoBehaviour
 {
     //public GameObject cube;
     public NetworkMan netMan;
+    Vector3 positionVector3;
+    Vector3 rotationVector3;
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -17,27 +21,27 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKey(KeyCode.UpArrow))
         {
-            this.transform.Translate(Vector3.forward * Time.deltaTime);
+            positionVector3 += transform.TransformVector(Vector3.forward) * Time.deltaTime;
         }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKey(KeyCode.DownArrow))
         {
-            this.transform.Translate(-(Vector3.forward) * Time.deltaTime);
+            positionVector3 -= transform.TransformVector(Vector3.forward) * Time.deltaTime;
         }
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.LeftArrow))
         {
-            this.transform.Rotate(-Vector3.up * Time.deltaTime * 90f);
+            rotationVector3 += new Vector3(0, 1, 0) * Time.deltaTime * 90f;
         }
-        if (Input.GetKeyDown(KeyCode.RightArrow))
+        if (Input.GetKey(KeyCode.RightArrow))
         {
-            this.transform.Rotate(Vector3.up * Time.deltaTime * 90f);
+            rotationVector3 -= new Vector3(0, 1, 0) * Time.deltaTime * 90f;
         }
 
     }
 
     void SendPos()
     {
-        netMan.SendPosition(this.transform);
+        netMan.SendPosition(positionVector3, rotationVector3);
     }
 }
